@@ -2,3 +2,5 @@
 *.local
 *.dcu
 *cache
+*.~*
+*.c
