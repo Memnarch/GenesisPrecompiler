@@ -74,6 +74,7 @@ type
     FIsVirtual: Boolean;
     FNeedsPrefix: Boolean;
     FNeedsThis: Boolean;
+    FOverridingParentIdentifier: string;
   public
     function GetLiteCSource(): string; override;
     procedure AddVarDec(AIdentifier, AType, APostChars: string);
@@ -83,6 +84,7 @@ type
     property IsAbstract: Boolean read FIsAbstract write FIsAbstract;
     property NeedsThis: Boolean read FNeedsThis write FNeedsThis;
     property NeedsPrefix: Boolean read FNeedsPrefix write FNeedsPrefix;
+    property OverridingParentIdentifier: string read FOverridingParentIdentifier write FOverridingParentIdentifier;
   end;
 
   TGenMethodDeclaration = class(TGenMethodDummyDeclaration)
@@ -230,8 +232,13 @@ var
   LElement: TGenSourceObject;
   LIsNotFirst: Boolean;
   i: Integer;
+  LParentIdentifier: string;
 begin
   Result := GenType.GetLiteCSource() + ' ';
+  if DoOverride and (not IsVirtual) then
+  begin
+    Result := Result +'zzOverriden';
+  end;
   if (NeedsPrefix) then
   begin
     Result := Result +  GenesisPrefix;
@@ -255,9 +262,18 @@ begin
       begin
         Result := Result + ', ';
       end;
+      if (not LIsNotFirst) and (OverridingParentIdentifier <> '') then
+      begin
+        Result := Result +OverridingParentIdentifier; //simply place void here if overriden and ignore original this type
+      end
+      else
+      begin
+         TGenVarDeclaration(LElement).NoDelimiter := True;
+        Result := Result + LElement.GetLiteCSource();
+      end;
       LIsNotFirst := True;
-      TGenVarDeclaration(LElement).NoDelimiter := True;
-      Result := Result + LElement.GetLiteCSource();
+
+
 //      if i < Elements.Count - 1 then
 //      begin
 //        Result := Result + ', ';

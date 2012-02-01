@@ -9,14 +9,14 @@ type
   TGenesisClass = class(TGenSourceObject)
   private
     FOverridenMethods: TStringList;
-    function GetBodyLiteCSource(): string;
+    function GetBodyLiteCSource(AOverridingParentIdentifier: string = ''): string;
     procedure AddOverridingMethods(AList: TStrings);
   public
     constructor Create(); reintroduce;
     destructor Destroy(); override;
     function GetMember(AIdentifier: string): TGenSourceObject;
     function GetLiteCSource(): string; override;
-    function GetParentLiteCSource(): string;
+    function GetParentLiteCSource(AOverridingParentIdentifier: string = ''): string;
     function HasMethodDummy(AName: string): boolean;
     function ParentImplementsMethod(AName: string): Boolean;
     function GetMethodDummyByName(AName: string): TGenMethodDummyDeclaration;
@@ -37,7 +37,7 @@ begin
   begin
     if (LDummy.ClassType = TGenMethodDummyDeclaration) and TGenMethodDummyDeclaration(LDummy).IsOverriding then
     begin
-      AList.Add(LDummy.Identifier);
+      AList.Add(LDummy.Identifier + '=' + Identifier);
     end;
   end;
 end;
@@ -54,7 +54,7 @@ begin
   inherited;
 end;
 
-function TGenesisClass.GetBodyLiteCSource(): string;
+function TGenesisClass.GetBodyLiteCSource(AOverridingParentIdentifier: string = ''): string;
 var
   i: Integer;
   LName: string;
@@ -83,7 +83,7 @@ begin
     begin
       LMethodDummy := TGenMethodDummyDeclaration(LElement);
       LParentIsVirtual := False;
-      LIsOverriden := (FOverridenMethods.IndexOf(LMethodDummy.Identifier)>=0);
+      LIsOverriden := (FOverridenMethods.IndexOfName(LMethodDummy.Identifier)>=0);
       LParentClass := GetFirstParentImplementorOfMethod(LMethodDummy.Identifier, True);
       if Assigned(LParentClass) then
       begin
@@ -93,6 +93,7 @@ begin
       if not LParentIsVirtual then
       begin
         LMethodDummy.DoOverride := LIsOverriden;
+        LMethodDummy.OverridingParentIdentifier := AOverridingParentIdentifier;
         Result := Result + LMethodDummy.GetLiteCSource(); //FMethodDummyList.Strings[i] + ';' + sLineBreak;
       end;
     end;
@@ -130,7 +131,7 @@ end;
 
 function TGenesisClass.GetLiteCSource: string;
 var
-  LOverridingMethods: TSTringList;
+  LOverridingMethods: TStringList;
 begin
   LOverridingMethods := TStringList.Create();
   Result := '';
@@ -141,10 +142,10 @@ begin
   Result := Result + 'typedef struct ' + Identifier + '{' + sLineBreak;
   AddOverridingMethods(LOverridingMethods);
   OverridenMethods.Assign(LOverridingMethods);
-  Result := Result + GetParentLiteCSource();
+  Result := Result + GetParentLiteCSource(Identifier);
   LOverridingMethods.Clear();
   FOverridenMethods.Assign(LOverridingMethods);
-  Result := Result + GetBodyLiteCSource();
+  Result := Result + GetBodyLiteCSource(Identifier);
   Result := Result + '}' + Identifier + ';' + sLineBreak;
   LOverridingMethods.Free();
 end;
@@ -165,7 +166,7 @@ begin
   Result := TGenMethodDummyDeclaration(GetElement(AName, TGenMethodDummyDeclaration));
 end;
 
-function TGenesisClass.GetParentLiteCSource(): string;
+function TGenesisClass.GetParentLiteCSource(AOverridingParentIdentifier: string = ''): string;
 var
   LName: string;
 begin
@@ -183,8 +184,9 @@ begin
     if Parent is TGenesisClass then
     begin
       TGenesisClass(Parent).OverridenMethods.Assign(OverridenMethods);
-      Result := Result + TGenesisClass(Parent).GetParentLiteCSource();
-      Result := Result + TGenesisClass(Parent).GetBodyLiteCSource();
+      AddOverridingMethods(TGenesisClass(Parent).OverridenMethods);
+      Result := Result + TGenesisClass(Parent).GetParentLiteCSource(AOverridingParentIdentifier);
+      Result := Result + TGenesisClass(Parent).GetBodyLiteCSource(AOverridingParentIdentifier);
     end;
   end;
 end;
