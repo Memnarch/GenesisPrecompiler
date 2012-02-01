@@ -1,0 +1,48 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{D96186DF-1AF3-4A55-A28B-4C834E9DA2CA}</ProjectGuid>
+		</PropertyGroup>
+		<ItemGroup>
+			<Projects Include="GPC.dproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="GPCC.dproj">
+				<Dependencies/>
+			</Projects>
+		</ItemGroup>
+		<ProjectExtensions>
+			<Borland.Personality>Default.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Default.Personality/>
+			</BorlandProject>
+		</ProjectExtensions>
+		<Target Name="GPC">
+			<MSBuild Projects="GPC.dproj"/>
+		</Target>
+		<Target Name="GPC:Clean">
+			<MSBuild Projects="GPC.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="GPC:Make">
+			<MSBuild Projects="GPC.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="GPCC">
+			<MSBuild Projects="GPCC.dproj"/>
+		</Target>
+		<Target Name="GPCC:Clean">
+			<MSBuild Projects="GPCC.dproj" Targets="Clean"/>
+		</Target>
+		<Target Name="GPCC:Make">
+			<MSBuild Projects="GPCC.dproj" Targets="Make"/>
+		</Target>
+		<Target Name="Build">
+			<CallTarget Targets="GPC;GPCC"/>
+		</Target>
+		<Target Name="Clean">
+			<CallTarget Targets="GPC:Clean;GPCC:Clean"/>
+		</Target>
+		<Target Name="Make">
+			<CallTarget Targets="GPC:Make;GPCC:Make"/>
+		</Target>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
+	</Project>
