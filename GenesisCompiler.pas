@@ -60,14 +60,17 @@ type
     function ProcessMethodDummyDeclaration(AUnit: TGenesisUnit; AClass: TGenSourceObject; AName,
       ADataType, APostChars: string; AIsVirtual, AIsAbstract: Boolean; var AErrorMessage: string; AAccessLevel: TAccessLevel = alPrivate): Boolean;
     function ProcessMethodSource(AUnit: TGenesisUnit; AParent: TGenSourceObject): string;
+    function ProcessForEach(AUnit: TGenesisUnit; AParent: TGenSourceObject): string;
     function GetUnitByName(AName: string): TGenesisUnit;
     function GetClassByName(AName: string): TGenesisClass;
+    function GetGlobalElement(AIdentifier: string; AType: TClass): TGenSourceObject;
     function GetSimilarType(AName: string): string;
     function GetSimilarClass(AName: string): string;
     function ResolveIdentifier(AUnit:TGenesisUnit; AParent: TGenSourceObject; AIdentifier: string; var ACallString: string;
       var AMethodDummy: TGenMethodDummyDeclaration): Boolean;
     procedure ProcessValueDeclaration(AUnit: TGenesisUnit;
       var ADataType, APostChars, AName: string);
+    procedure ErrorUndeclaredIdentifier(AIdentifier: string);
     procedure ProcessConDestructorDeclaration(AUnit: TGenesisUnit; AParent: TGenSourceObject);
     procedure ProcessStructDeclaration(AUnit: TGenesisUnit; AParent: TGenSourceObject);
     procedure ProcessMethodFunctionDeclaration(AUnit: TGenesisUnit; ATypeName, APostChars, AIdentifier: string);
@@ -187,9 +190,7 @@ begin
       end;
     end;
 
-    LStringList.LoadFromFile(AFileName);
 
-    LUnit.SourceCode :=RemoveAllComments(LStringList.Text);
     LUnit.GenesisUnitName := ExtractFileName(AFileName);
     LExistingUnit := GetUnitByName(LUnit.GenesisUnitName);
     if Assigned(LExistingUnit) then
@@ -203,6 +204,8 @@ begin
         exit;
       end;
     end;
+    LStringList.LoadFromFile(AFileName);
+    LUnit.SourceCode :=RemoveAllComments(LStringList.Text);
     FUnitList.Add(LUnit);
     CompileUnit(LUnit, ACatchException);
     if LUnit.RequiresBaseInclude then
@@ -355,6 +358,11 @@ begin
   inherited;
 end;
 
+procedure TGenesisCompiler.ErrorUndeclaredIdentifier(AIdentifier: string);
+begin
+  CompileLog('Undeclared identifier ' + QuotedStr(AIdentifier), mlError);
+end;
+
 procedure TGenesisCompiler.ExpectClassType(AClass, AMessage: string);
 var
   LClass: string;
@@ -467,6 +475,21 @@ begin
   end;
   SiMain.LogString('Result', Result);
   SiMain.LeaveMethod(Self, 'GetClosedTextBlock');
+end;
+
+function TGenesisCompiler.GetGlobalElement(AIdentifier: string;
+  AType: TClass): TGenSourceObject;
+var
+  LUnit: TGenesisUnit;
+begin
+  for LUnit in FUnitList do
+  begin
+    Result := LUnit.GetElement(AIdentifier, AType);
+    if Assigned(Result) then
+    begin
+      Break;
+    end;
+  end;
 end;
 
 function TGenesisCompiler.GetLineForLCLine(AUnit, AErrObject: string;
@@ -1188,7 +1211,7 @@ function TGenesisCompiler.ProcessMethodSource(AUnit: TGenesisUnit;
   AParent: TGenSourceObject): string;
 var
   LBracketCount, LStartPos, LEndPos: Integer;
-  LWord, LIdentifier, LPostChars, LCallString, LMessage: string;
+  LWord, LNextWord, LIdentifier, LPostChars, LCallString, LMessage: string;
   LHasValueReturn, LHasVoidReturn, LReturnIsUnsafe: Boolean;
   LMethod: TGenMethodDeclaration;
   LMethodDummy: TGenMethodDummyDeclaration;
@@ -1259,6 +1282,20 @@ begin
             LStartPos := AUnit.Position;
             Result := Copy(Result, 1, Length(Result) - Length(LWord));//removing the current item again from the output
             AUnit.InsertSource('this.', AUnit.Position);
+            Continue;
+          end;
+        end;
+      end;
+
+      if LWord = 'for' then
+      begin
+        if AUnit.IsNextVisibleCharSet(CAlphaChars+CUnderScore) then
+        begin
+          LNextWord := AUnit.GetNextWord();
+          if LNextWord = 'each' then
+          begin
+            Result := Copy(Result, 1, Length(Result) - Length(LWord)); //removing "for" from result
+            Result := Result + ProcessForEach(AUnit, AParent);
             Continue;
           end;
         end;
@@ -1748,6 +1785,53 @@ begin
     end;
   end;
   SiMain.LeaveMethod(Self, 'ProcessMethodDeclarationEx');
+end;
+
+function TGenesisCompiler.ProcessForEach(AUnit: TGenesisUnit;
+  AParent: TGenSourceObject): string;
+var
+  LVarIdentifier, LListIdentifier, LWord: string;
+  LVarElement: TGenVarDeclaration;
+  LListElement: TGenVarDeclaration;
+begin
+  AUnit.ExpectChar('(');
+  AUnit.DropNextVisibleChar();
+  AUnit.ExpectCharSet(CAlphaChars+CUnderScore);
+  LVarIdentifier := AUnit.GetNextWord();
+  LVarElement := AParent.GetElement(LVarIdentifier, TGenVarDeclaration) as TGenVarDeclaration;
+  if not Assigned(LVarElement) then
+  begin
+    LVarElement := GetGlobalElement(LVarIdentifier, TGenVarDeclaration) as TGenVarDeclaration;
+    if not assigned(LVarElement) then
+    begin
+      ErrorUndeclaredIdentifier(LVarIdentifier);
+      exit;
+    end;
+  end;
+
+  AUnit.ExpectCharSet(CAlphaChars+CUnderScore);
+  LWord := AUnit.GetNextWord();
+  ExpectSameIdentifier(LWord, 'in');
+  AUnit.ExpectCharSet(CAlphaChars+CUnderScore);
+  LListIdentifier := AUnit.GetNextWord();
+
+  LListElement := AParent.GetElement(LListIdentifier, TGenVarDeclaration) as TGenVarDeclaration;
+  if not Assigned(LListElement) then
+  begin
+    LListElement := GetGlobalElement(LListIdentifier, TGenVarDeclaration) as TGenVarDeclaration;
+    if not assigned(LListElement) then
+    begin
+      ErrorUndeclaredIdentifier(LListIdentifier);
+      exit;
+    end;
+  end;
+  AUnit.ExpectChar(')');
+  AUnit.DropNextVisibleChar();
+  AUnit.ExpectChar('{');
+  Result := LListIdentifier+'.FEInit('+LListIdentifier+'); while('+LListIdentifier+'.FEHasMoreElements(' +
+    LListIdentifier+') > 0)' + sLineBreak +
+    '{ ' + LVarIdentifier + ' = ' + LListIdentifier + '.FENextElement(' + LListIdentifier + ');' + sLineBreak;
+  Result := Result + ProcessMethodSource(AUnit, AParent) + '}' + sLineBreak;
 end;
 
 procedure TGenesisCompiler.SetExpectedChars(const Value: TAnsiCharSet);
