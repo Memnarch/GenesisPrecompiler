@@ -34,6 +34,7 @@ type
     procedure DropNextVisibleChar();
     procedure InsertSource(ASource: string; APosition: Integer);
     function GetNextWord(): string;
+    function GetNextIdentifier(): string;
     function GetNextVisibleChar(): Char;
     function IsNextVisibleChar(AChar: Char): Boolean;
     function IsNextVisibleCharSet(ASet: TAnsiCharSet): Boolean;
@@ -455,6 +456,12 @@ end;
 function TGenesisUnit.GetMethodByName(AName: string): TGenMethodDeclaration;
 begin
   Result := TGenMethodDeclaration(GetElement(AName, TGenMethodDeclaration));
+end;
+
+function TGenesisUnit.GetNextIdentifier: string;
+begin
+  ExpectCharSet(CAlphaChars+CUnderScore);
+  Result := GetNextWord();
 end;
 
 function TGenesisUnit.GetNextVisibleChar: Char;
