@@ -1793,6 +1793,7 @@ var
   LVarIdentifier, LListIdentifier, LWord: string;
   LVarElement: TGenVarDeclaration;
   LListElement: TGenVarDeclaration;
+  LClass: TGenesisClass;
 begin
   AUnit.ExpectChar('(');
   AUnit.DropNextVisibleChar();
@@ -1825,6 +1826,13 @@ begin
       exit;
     end;
   end;
+  ExpectClassType(LListElement.GenType.Identifier);
+  LClass := GetClassByName(LListElement.GenType.Identifier);
+  if not LClass.GenInheritsFrom('CForEachObject') then
+  begin
+    CompileLog(QuotedStr(LListElement.Identifier) + ' is not derived from ' + QuotedStr('CForEachObject'), mlError);
+  end;
+
   AUnit.ExpectChar(')');
   AUnit.DropNextVisibleChar();
   AUnit.ExpectChar('{');
