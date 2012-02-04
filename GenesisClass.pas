@@ -21,6 +21,7 @@ type
     function ParentImplementsMethod(AName: string): Boolean;
     function GetMethodDummyByName(AName: string): TGenMethodDummyDeclaration;
     function GetFirstParentImplementorOfMethod(AName: string; AIsVirtualOrAbstract: Boolean): TGenesisClass;
+    function GenInheritsFrom(AName: string): Boolean;
     property OverridenMethods: TStringList read FOverridenMethods;
   end;
 
@@ -52,6 +53,15 @@ destructor TGenesisClass.Destroy;
 begin
   FOverridenMethods.Free;
   inherited;
+end;
+
+function TGenesisClass.GenInheritsFrom(AName: string): Boolean;
+begin
+  Result := (Self.Identifier = AName);
+  if (not Result) and Assigned(Parent) and (Parent is TGenesisClass) then
+  begin
+    Result := TGenesisClass(Parent).GenInheritsFrom(AName);
+  end;
 end;
 
 function TGenesisClass.GetBodyLiteCSource(AOverridingParentIdentifier: string = ''): string;
