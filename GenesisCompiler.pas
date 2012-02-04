@@ -61,6 +61,7 @@ type
       ADataType, APostChars: string; AIsVirtual, AIsAbstract: Boolean; var AErrorMessage: string; AAccessLevel: TAccessLevel = alPrivate): Boolean;
     function ProcessMethodSource(AUnit: TGenesisUnit; AParent: TGenSourceObject): string;
     function ProcessForEach(AUnit: TGenesisUnit; AParent: TGenSourceObject): string;
+    function ProcessNewCall(AUnit: TGenesisUnit; AFrom: TGenSourceObject): string;
     function GetUnitByName(AName: string): TGenesisUnit;
     function GetClassByName(AName: string): TGenesisClass;
     function GetGlobalElement(AIdentifier: string; AType: TClass): TGenSourceObject;
@@ -1301,6 +1302,13 @@ begin
         end;
       end;
 
+      if LWord = 'new' then
+      begin
+        Result := Copy(Result, 1, Length(Result) - Length(LWord)); //removing "new" from result
+        Result := Result + ProcessNewCall(AUnit, AParent);
+        Continue;
+      end;
+
       if IsClass(LWord) and AUnit.IsNextVisibleChar(':') then
       begin
         if not (AParent.Parent is TGenesisClass) then
@@ -1434,6 +1442,17 @@ begin
     end;
   end;
   SiMain.LeaveMethod(Self, 'ProcessMethodSource');
+end;
+
+function TGenesisCompiler.ProcessNewCall(AUnit: TGenesisUnit;
+  AFrom: TGenSourceObject): string;
+var
+  LClassIdentifier: string;
+begin
+  LClassIdentifier := AUnit.GetNextIdentifier();
+  ExpectClassType(LClassIdentifier);
+  Result := '_' + LClassIdentifier;
+  AUnit.ExpectChar('(');
 end;
 
 procedure TGenesisCompiler.ProcessStructDeclaration(AUnit: TGenesisUnit;
