@@ -8,10 +8,11 @@ uses
 
 type
   TAboutForm = class(TForm)
-    Label1: TLabel;
+    lbTitle: TLabel;
     Label2: TLabel;
-    Label3: TLabel;
-    Label4: TLabel;
+    lbProgrammer: TLabel;
+    lbLastModifiedVersion: TLabel;
+    procedure FormCreate(Sender: TObject);
   private
     { Private-Deklarationen }
   public
@@ -23,6 +24,19 @@ var
 
 implementation
 
+uses
+  GenesisConsts;
+
 {$R *.dfm}
+
+procedure TAboutForm.FormCreate(Sender: TObject);
+begin
+  lbTitle.Caption := CGenTitle;
+  lbLastModifiedVersion.Caption := 'v'+CGenVersion + ' ' + CGenLastModified;
+  lbProgrammer.Caption := CGenProgrammer;
+  lbTitle.Left := (Width-lbTitle.Width) div 2;
+  lbLastModifiedVersion.Left := (Width-lbLastModifiedVersion.Width) div 2;
+  lbProgrammer.Left := (Width-lbProgrammer.Width) div 2;
+end;
 
 end.

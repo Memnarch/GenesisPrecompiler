@@ -29,8 +29,9 @@ begin
     LLCErrors := TSTringList.Create();
     if (ParamCount = 0) then
     begin
-      Writeln('Genesis Precompiler V0.4 28th January 2012');
-      WriteLn('by Rackscha alias Memnarch');
+      Writeln(CGenTitle);
+      Writeln('v' + CGenVersion + ' ' + CGenLastModified);
+      WriteLn('by ' + CGenProgrammer);
       WriteLn('');
       WriteLn('Current Path to Acknex: ' + GetAcknexPath());
       WriteLn('');
@@ -49,7 +50,7 @@ begin
     end;
     for i := 0 to ParamCount do
     begin
-      SiMain.LogColored($0000dd, ParamStr(i));
+      SiMain.LogColored($00dd00, ParamStr(i));
     end;
 
     for i := 0 to ParamCount do

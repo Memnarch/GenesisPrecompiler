@@ -14,14 +14,16 @@ object AboutForm: TAboutForm
   Font.Style = []
   OldCreateOrder = False
   Position = poMainFormCenter
+  OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
-  object Label1: TLabel
-    Left = 32
+  object lbTitle: TLabel
+    Left = 102
     Top = 8
-    Width = 245
+    Width = 107
     Height = 19
-    Caption = 'GenesisPrecompiler v0.4 for Lite-C'
+    Alignment = taCenter
+    Caption = '#PlaceHolder#'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
@@ -43,12 +45,12 @@ object AboutForm: TAboutForm
     Font.Style = []
     ParentFont = False
   end
-  object Label3: TLabel
-    Left = 64
+  object lbProgrammer: TLabel
+    Left = 102
     Top = 82
-    Width = 178
+    Width = 105
     Height = 19
-    Caption = 'Rackscha alias Memnarch'
+    Caption = '#placeholder#'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
@@ -56,12 +58,12 @@ object AboutForm: TAboutForm
     Font.Style = []
     ParentFont = False
   end
-  object Label4: TLabel
+  object lbLastModifiedVersion: TLabel
     Left = 104
     Top = 33
-    Width = 133
+    Width = 105
     Height = 19
-    Caption = '28th January 2012'
+    Caption = '#placeholder#'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -16

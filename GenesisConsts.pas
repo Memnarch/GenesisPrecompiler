@@ -14,6 +14,11 @@ const
   CNumericChars: TAnsiCharSet = ['1'..'9','0'];
   CUnderScore: TAnsiCharSet = ['_'];
   CExtension = '.cxx';
+
+  CGenVersion = '0.5';
+  CGenTitle = 'GenesisPrecompiler for LiteC';
+  CGenLastModified = '04th February 2012';
+  CGenProgrammer = 'Rackscha alias Memnarch';
 implementation
 
 end.
