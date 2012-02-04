@@ -62,6 +62,7 @@ type
     function ProcessMethodSource(AUnit: TGenesisUnit; AParent: TGenSourceObject): string;
     function ProcessForEach(AUnit: TGenesisUnit; AParent: TGenSourceObject): string;
     function ProcessNewCall(AUnit: TGenesisUnit; AFrom: TGenSourceObject): string;
+    function ProcessDeleteCall(AUnit: TGenesisUnit; AFrom: TGenSourceObject): string;
     function GetUnitByName(AName: string): TGenesisUnit;
     function GetClassByName(AName: string): TGenesisClass;
     function GetGlobalElement(AIdentifier: string; AType: TClass): TGenSourceObject;
@@ -1309,6 +1310,12 @@ begin
         Continue;
       end;
 
+      if LWord = 'delete' then
+      begin
+        Result := Result + ProcessDeleteCall(AUnit, AParent);
+        Continue;
+      end;
+
       if IsClass(LWord) and AUnit.IsNextVisibleChar(':') then
       begin
         if not (AParent.Parent is TGenesisClass) then
@@ -1741,6 +1748,30 @@ begin
   LMethod.Source := ProcessMethodSource(AUnit, LMethod); //GetClosedTextBlock(AUnit, '{', '}');
   LMethod.GenesisLineEnd := AUnit.GetCurrentLine() - 1;
   SiMain.LeaveMethod(Self, 'ProcessConDestructorDeclaration');
+end;
+
+function TGenesisCompiler.ProcessDeleteCall(AUnit: TGenesisUnit;
+  AFrom: TGenSourceObject): string;
+var
+  LIdentifier, LCallString: string;
+  LDummy: TGenMethodDummyDeclaration;
+begin
+  if not AUnit.IsNextVisibleChar('(') then
+  begin
+    LIdentifier := AUnit.GetNextIdentifier();
+    ResolveIdentifier(AUnit, AFrom, LIdentifier, LCallString, LDummy);
+    if Assigned(LDummy) then
+    begin
+      CompileLog('Cannot call ' + QuotedStr('delete') + ' on method ' + QuotedStr(LDummy.Identifier), mlError);
+    end;
+    if LCallString = '' then
+    begin
+      CompileLog('unknown identifier ' + QuotedStr(LIdentifier), mlError);
+    end;
+    Result := '(' + LCallString + ');';
+    AUnit.ExpectChar(';');
+    AUnit.DropNextVisibleChar();
+  end;
 end;
 
 function TGenesisCompiler.ProcessFieldVarDeclaration(AUnit: TGenesisUnit;
